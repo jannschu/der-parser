@@ -74,8 +74,8 @@ pub enum BerObjectContent<'a> {
     OctetString(&'a [u8]),
     Null,
     Enum(u64),
-    OID(Oid),
-    RelativeOID(Oid),
+    OID(Oid<'a>),
+    RelativeOID(Oid<'a>),
     NumericString(&'a [u8]),
     PrintableString(&'a [u8]),
     IA5String(&'a [u8]),
@@ -223,17 +223,8 @@ impl<'a> BerObject<'a> {
 
     /// Attempt to read an OID value from DER object.
     /// This can fail if the object is not an OID.
-    ///
-    /// Note that this function returns a reference to the OID. To get an owned value,
-    /// use [`as_oid_val`](struct.BerObject.html#method.as_oid_val)
-    pub fn as_oid(&self) -> Result<&Oid, BerError> {
+    pub fn as_oid(&self) -> Result<&Oid<'a>, BerError> {
         self.content.as_oid()
-    }
-
-    /// Attempt to read an OID value from DER object.
-    /// This can fail if the object is not an OID.
-    pub fn as_oid_val(&self) -> Result<Oid, BerError> {
-        self.content.as_oid_val()
     }
 
     /// Attempt to read the content from a context-specific DER object.
@@ -307,8 +298,8 @@ impl<'a> BerObject<'a> {
 }
 
 /// Build a DER object from an OID.
-impl<'a> From<Oid> for BerObject<'a> {
-    fn from(oid: Oid) -> BerObject<'a> {
+impl<'a> From<Oid<'a>> for BerObject<'a> {
+    fn from(oid: Oid<'a>) -> BerObject<'a> {
         BerObject::from_obj(BerObjectContent::OID(oid))
     }
 }
@@ -356,18 +347,10 @@ impl<'a> BerObjectContent<'a> {
         }
     }
 
-    pub fn as_oid(&self) -> Result<&Oid, BerError> {
+    pub fn as_oid(&self) -> Result<&Oid<'a>, BerError> {
         match *self {
             BerObjectContent::OID(ref o) => Ok(o),
             BerObjectContent::RelativeOID(ref o) => Ok(o),
-            _ => Err(BerError::BerTypeError),
-        }
-    }
-
-    pub fn as_oid_val(&self) -> Result<Oid, BerError> {
-        match *self {
-            BerObjectContent::OID(ref o) => Ok(o.to_owned()),
-            BerObjectContent::RelativeOID(ref o) => Ok(o.to_owned()),
             _ => Err(BerError::BerTypeError),
         }
     }
@@ -622,8 +605,8 @@ mod tests {
 
     #[test]
     fn test_der_from_oid() {
-        let obj: BerObject = Oid::from(&[1, 2]).into();
-        let expected = BerObject::from_obj(BerObjectContent::OID(Oid::from(&[1, 2])));
+        let obj: BerObject = Oid::from(&[1, 2]).unwrap().into();
+        let expected = BerObject::from_obj(BerObjectContent::OID(Oid::from(&[1, 2]).unwrap()));
 
         assert_eq!(obj, expected);
     }

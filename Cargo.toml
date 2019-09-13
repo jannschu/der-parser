@@ -32,10 +32,11 @@ all-features = true
 nom = "5.0"
 rusticata-macros = "2.0.2"
 num-bigint = { version = "0.2", optional = true }
+num-traits = { version = "0.2", optional = true }
 
 [features]
 default = []
-bigint = ["num-bigint"]
+bigint = ["num-bigint", "num-traits"]
 
 [dev-dependencies]
 hex-literal = "0.2"

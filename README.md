@@ -96,6 +96,18 @@ or use the `bigint` feature of this crate and use
 
 ## Changes
 
+### 4
+
+- Change the api around `Oid` to achieve zero-copy. The following changed:
+    - The `Oid` struct now has a lifetime and uses `Cow` internally.
+    - The `Oid` struct now encodes whether the oid is relative or not.
+    - `Hash` is now derived for `Oid`.
+    - The `as_oid_val` method is removed. Use `.clone()` or `.to_owned()`
+      with `as_oid`.
+    - The `Display` and `Debug` implementation of `Oid` now differs depending on whether the
+      `bignum` feature is activated. The reason is that `to_string` is now
+      only available if `bignum` is activated.
+
 ### 3.0.2
 
 - Add `parse_ber_u32` and `parse_ber_u64` functions
