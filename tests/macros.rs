@@ -96,4 +96,20 @@ fn parse_app_int(i: &[u8]) -> BerResult<(BerObjectHeader, SimpleStruct)> {
 }
 
 #[test]
-fn macros() {}
+fn oid_macro() {
+    let abs = oid!(1.2.44.233.0.1249829348248912829838230928);
+    assert!(!abs.relative);
+    if cfg!(feature = "bigint") {
+        assert_eq!(abs.to_string(), "1.2.44.233.0.1249829348248912829838230928");
+    } else {
+        assert_eq!(abs.to_string(), "ASN.1 2a 2c 81 69 00 c0 ce d6 d1 ba fd 8e c7 e5 dc ee 8b 10");
+    }
+
+    let rel = oid!(rel 1.2.44.233);
+    assert!(rel.relative);
+    if cfg!(feature = "bigint") {
+        assert_eq!(rel.to_string(), "1.2.44.233");
+    } else {
+        assert_eq!(rel.to_string(), "ASN.1 rel. 01 02 2c 81 69");
+    }
+}

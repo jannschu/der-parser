@@ -19,6 +19,10 @@ pub enum ParseError {
 /// An example for an oid in string representation is "1.2.840.113549.1.1.5".
 ///
 /// For non-relative oids restrictions apply to the first two components.
+///
+/// This library ships with a procedural macro `oid` which can be used to
+/// create oids. For example `oid!(1.2.44.233)` or `oid!(44.233)`
+/// for relative oids.
 #[derive(Hash, PartialEq, Eq, Clone)]
 pub struct Oid<'a> {
     asn1: Cow<'a, [u8]>,
@@ -172,8 +176,13 @@ impl<'a> fmt::Display for Oid<'a> {
             if self.relative {
                 f.write_str("rel. ")?;
             }
+            let mut i = 0;
             for o in self.asn1.iter() {
-                f.write_str(&format!("{:02x} ", o))?;
+                f.write_str(&format!("{:02x}", o))?;
+                i += 1;
+                if i != self.asn1.len() {
+                    f.write_str(" ")?;
+                }
             }
             Ok(())
         }

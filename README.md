@@ -107,6 +107,8 @@ or use the `bigint` feature of this crate and use
     - The `Display` and `Debug` implementation of `Oid` now differs depending on whether the
       `bignum` feature is activated. The reason is that `to_string` is now
       only available if `bignum` is activated.
+    - `from_relative` was added to `Oid`. `from` returns a `Result` now.
+    - The procedural macro `oid!` was added.
 
 ### 3.0.2
 
