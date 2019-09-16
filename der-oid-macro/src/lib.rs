@@ -58,7 +58,7 @@ pub fn oid(item: TokenStream) -> TokenStream {
 		if dec.len() < 2 {
 			panic!("Need at least two components for non-relative oid");
 		}
-		if dec[0] > 7u8.into() || (dec[1] > 256u16 - dec[0].clone() * 6u8) {
+		if dec[0] >= 7u8.into() || dec[1] >= 40u8.into() {
 			panic!("First components are too big");
 		}
 		enc.push(dec[0].to_u8().unwrap() * 40 + dec[1].to_u8().unwrap());

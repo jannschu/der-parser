@@ -58,7 +58,7 @@ impl<'a> Oid<'a> {
         if s.len() < 2 {
             return Err(ParseError::TooShort);
         }
-        if s[0] > 6 || s[1] > 256 - 40 * s[1] {
+        if s[0] >= 7 || s[1] >= 40 {
             return Err(ParseError::FirstComponentsTooLarge);
         }
 
