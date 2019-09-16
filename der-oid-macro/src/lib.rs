@@ -3,7 +3,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro_hack::proc_macro_hack;
 
-fn parse_arg(arg: &str) -> (bool, Vec<&str>) {
+fn parse_arg(arg: &str) -> (bool, bool, Vec<&str>) {
 	use nom::{
 		combinator::{recognize, map, opt},
 		character::complete::{one_of, char},
@@ -11,7 +11,7 @@ fn parse_arg(arg: &str) -> (bool, Vec<&str>) {
 		bytes::complete::{take_while, tag},
 		error::{ParseError, ErrorKind},
 		multi::{many0_count, separated_list},
-		sequence::{delimited, pair, terminated},
+		sequence::{delimited, pair, terminated, tuple},
 		IResult, exact, call,
 	};
 	
@@ -32,11 +32,12 @@ fn parse_arg(arg: &str) -> (bool, Vec<&str>) {
 		delimited(ws, char('.'), ws)(i)
 	}
 
-	fn root<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (bool, Vec<&'a str>), E> {
-		pair(
+	fn root<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (bool, bool, Vec<&'a str>), E> {
+		tuple((
+			map(opt(terminated(tag("raw "), ws)), |x| x.is_some()),
 			map(opt(terminated(tag("rel "), ws)), |x| x.is_some()),
 			separated_list(ws_dot_ws, uint)
-		)(i.trim())
+		))(i.trim())
 	}
 
 	exact!(arg, call!(root::<(&str, ErrorKind)>)).expect("could not parse oid").1
@@ -47,7 +48,7 @@ pub fn oid(item: TokenStream) -> TokenStream {
 	use num_traits::cast::ToPrimitive;
 
 	let arg = item.to_string();
-	let (rel, int_strings) = parse_arg(&arg);
+	let (raw, rel, int_strings) = parse_arg(&arg);
 	let ints: Vec<num_bigint::BigUint> = int_strings.into_iter()
 		.map(|s| s.parse().unwrap())
 		.collect();
@@ -113,7 +114,9 @@ pub fn oid(item: TokenStream) -> TokenStream {
 	}
 	s.push(']');
 
-	let code = if rel {
+	let code = if raw {
+		format!("{}", s)
+	} else if rel {
 		format!("der_parser::oid::Oid::new_relative(std::borrow::Cow::Borrowed({}.as_ref()))", s)
 	} else {
 		format!("der_parser::oid::Oid::new(std::borrow::Cow::Borrowed({}.as_ref()))", s)

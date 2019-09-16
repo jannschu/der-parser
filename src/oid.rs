@@ -56,6 +56,9 @@ impl<'a> Oid<'a> {
     /// Build an OID from an array of object identifier components.
     pub fn from<'b>(s: &'b [u64]) -> Result<Oid<'static>, ParseError> {
         if s.len() < 2 {
+            if s.len() == 1 && s[0] == 0 {
+                return Ok(Oid { asn1: Cow::Borrowed(&[0]), relative: false });
+            }
             return Err(ParseError::TooShort);
         }
         if s[0] >= 7 || s[1] >= 40 {
@@ -132,6 +135,9 @@ pub mod bigint {
                     return Some((self.oid.asn1[0] / 40).into());
                 } else if self.pos == 0 {
                     self.pos += 1;
+                    if self.oid.asn1[0] == 0 {
+                        return None;
+                    }
                     return Some((self.oid.asn1[0] % 40).into());
                 }
             }
@@ -232,5 +238,20 @@ mod tests {
         let oid = Oid::from_str("1.2.840.113549.1.1.5").unwrap();
         assert_eq!(byte_ref.as_ref(), oid.asn1.as_ref());
         assert_eq!(oid_ref, oid);
+    }
+
+    #[test]
+    fn test_zero_oid() {
+        #[cfg(feature = "bigint")]
+        {
+            use num_traits::FromPrimitive;
+            use num_bigint::BigUint;
+
+            let oid_raw = Oid::new(std::borrow::Cow::Borrowed(&[0]));
+            let ids: Vec<BigUint> = oid_raw.iter().collect(); 
+            assert_eq!(vec![BigUint::from_u8(0).unwrap()], ids);
+        }
+        let oid_from = Oid::from(&[0]).unwrap();
+        assert_eq!(oid_from.asn1.as_ref(), &[0]);
     }
 }

@@ -21,7 +21,9 @@ include = [
   "src/*.rs",
   "src/ber/*.rs",
   "src/der/*.rs",
-  "tests/*.rs"
+  "tests/*.rs",
+  "der-oid-macro/Cargo.toml",
+  "der-oid-macro/src/*.rs",
 ]
 
 [package.metadata.docs.rs]
@@ -35,7 +37,7 @@ num-bigint = { version = "0.2", optional = true }
 num-traits = { version = "0.2", optional = true }
 
 proc-macro-hack = "0.5"
-der-oid-macro = { path = "./der-oid-macro" }
+der-oid-macro = { version = "0.1", path = "./der-oid-macro" }
 
 [features]
 default = []

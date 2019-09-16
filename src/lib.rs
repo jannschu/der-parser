@@ -123,6 +123,5 @@ extern crate num_bigint;
 
 use proc_macro_hack::proc_macro_hack;
 
-#[doc(hidden)]
 #[proc_macro_hack]
 pub use der_oid_macro::oid;
