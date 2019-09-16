@@ -91,6 +91,11 @@ impl<'a> Oid<'a> {
     pub fn to_owned(&self) -> Oid<'static> {
         Oid { asn1: Cow::from(self.asn1.to_vec()), relative: self.relative }
     }
+
+    /// Get the oid encoded as asn1 without the header.
+    pub fn asn1(&self) -> &[u8] {
+        self.asn1.as_ref()
+    }
 }
 
 #[cfg(feature = "bigint")]

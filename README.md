@@ -102,8 +102,6 @@ or use the `bigint` feature of this crate and use
     - The `Oid` struct now has a lifetime and uses `Cow` internally.
     - The `Oid` struct now encodes whether the oid is relative or not.
     - `Hash` is now derived for `Oid`.
-    - The `as_oid_val` method is removed. Use `.clone()` or `.to_owned()`
-      with `as_oid`.
     - The `Display` and `Debug` implementation of `Oid` now differs depending on whether the
       `bignum` feature is activated. The reason is that `to_string` is now
       only available if `bignum` is activated.

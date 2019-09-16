@@ -227,6 +227,12 @@ impl<'a> BerObject<'a> {
         self.content.as_oid()
     }
 
+    /// Attempt to read an OID value from DER object.
+    /// This can fail if the object is not an OID.
+    pub fn as_oid_val(&self) -> Result<Oid<'a>, BerError> {
+        self.content.as_oid_val()
+    }
+
     /// Attempt to read the content from a context-specific DER object.
     /// This can fail if the object is not context-specific.
     ///
@@ -353,6 +359,10 @@ impl<'a> BerObjectContent<'a> {
             BerObjectContent::RelativeOID(ref o) => Ok(o),
             _ => Err(BerError::BerTypeError),
         }
+    }
+
+    pub fn as_oid_val(&self) -> Result<Oid<'a>, BerError> {
+        self.as_oid().map(|o| o.clone())
     }
 
     pub fn as_context_specific(&self) -> Result<(BerTag, Option<Box<BerObject<'a>>>), BerError> {
