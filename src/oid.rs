@@ -10,7 +10,7 @@ pub enum ParseError {
     TooShort,
     /// Signalizes that the first or second component is too large.
     /// The first must be within the range 0 to 6 (inclusive).
-    /// The second component must be less than 256 - 40 * first.
+    /// The second component must be less than 40.
     FirstComponentsTooLarge,
     ParseIntError,
 }
@@ -21,7 +21,7 @@ pub enum ParseError {
 /// For non-relative oids restrictions apply to the first two components.
 ///
 /// This library ships with a procedural macro `oid` which can be used to
-/// create oids. For example `oid!(1.2.44.233)` or `oid!(44.233)`
+/// create oids. For example `oid!(1.2.44.233)` or `oid!(rel 44.233)`
 /// for relative oids.
 #[derive(Hash, PartialEq, Eq, Clone)]
 pub struct Oid<'a> {
@@ -64,7 +64,6 @@ impl<'a> Oid<'a> {
         if s[0] >= 7 || s[1] >= 40 {
             return Err(ParseError::FirstComponentsTooLarge);
         }
-
         let asn1_encoded: Vec<u8> = 
             [(s[0] * 40 + s[1]) as u8].iter()
                 .map(|o| *o)
@@ -85,7 +84,7 @@ impl<'a> Oid<'a> {
     /// Create a deep copy of the oid.
     ///
     /// This method allocates data on the heap. The returned oid
-    /// can be used without keeping the ASN.1 representing around.
+    /// can be used without keeping the ASN.1 representation around.
     ///
     /// Cloning the returned oid does again allocate data.
     pub fn to_owned(&self) -> Oid<'static> {
@@ -167,7 +166,17 @@ pub mod bigint {
             if self.oid.relative {
                 self.oid.asn1.into_iter().filter(|o| (*o >> 7) == 0u8).count()
             } else {
-                2 + self.oid.asn1[2..].into_iter().filter(|o| (*o >> 7) == 0u8).count() 
+                if self.oid.asn1.len() == 0 {
+                    0
+                } else if self.oid.asn1.len() == 1 {
+                    if self.oid.asn1[0] == 0 {
+                        1
+                    } else {
+                        2
+                    }
+                } else {
+                    2 + self.oid.asn1[2..].into_iter().filter(|o| (*o >> 7) == 0u8).count()
+                }
             }
         }
 
@@ -236,6 +245,16 @@ mod tests {
         assert_eq!(format!("{:?}", oid), "OID(rel. 840.113549.1.1.5)".to_owned());
     }
 
+    #[cfg(feature = "bigint")]
+    #[test]
+    fn test_iter_len() {
+        assert_eq!(Oid::new(std::borrow::Cow::Borrowed(&[])).iter().len(), 0);
+        assert_eq!(Oid::from(&[0]).unwrap().iter().len(), 1);
+        assert_eq!(Oid::from(&[1, 2]).unwrap().iter().len(), 2);
+        assert_eq!(Oid::from(&[1, 29, 459,342]).unwrap().iter().len(), 4);
+        assert_eq!(Oid::from_relative(&[459,342]).unwrap().iter().len(), 2);
+    }
+
     #[test]
     fn test_oid_from_str() {
         let oid_ref = Oid::from(&[1, 2, 840, 113_549, 1, 1, 5]).unwrap();
@@ -255,6 +274,7 @@ mod tests {
             let oid_raw = Oid::new(std::borrow::Cow::Borrowed(&[0]));
             let ids: Vec<BigUint> = oid_raw.iter().collect(); 
             assert_eq!(vec![BigUint::from_u8(0).unwrap()], ids);
+            assert_eq!(oid_raw.iter().len(), 1);
         }
         let oid_from = Oid::from(&[0]).unwrap();
         assert_eq!(oid_from.asn1.as_ref(), &[0]);
