@@ -113,3 +113,15 @@ fn oid_macro() {
         assert_eq!(rel.to_string(), "ASN.1 rel. 01 02 2c 81 69");
     }
 }
+
+#[test]
+fn oid_macro_edge_cases() {
+    let undef = oid!(0);
+    assert_eq!(undef.asn1(), [0].as_ref());
+
+    let two = oid!(1.2);
+    assert_eq!(two.asn1(), [1 * 40 + 2].as_ref());
+
+    let spacing = oid!( 5.2 );
+    assert_eq!(spacing.asn1(), [5 * 40 + 2].as_ref());
+}

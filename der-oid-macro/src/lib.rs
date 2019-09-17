@@ -37,26 +37,22 @@ fn parse_arg(arg: &str) -> (bool, bool, Vec<&str>) {
 			map(opt(terminated(tag("raw "), ws)), |x| x.is_some()),
 			map(opt(terminated(tag("rel "), ws)), |x| x.is_some()),
 			separated_list(ws_dot_ws, uint)
-		))(i.trim())
+		))(i)
 	}
 
-	exact!(arg, call!(root::<(&str, ErrorKind)>)).expect("could not parse oid").1
+	exact!(arg.trim(), call!(root::<(&str, ErrorKind)>)).expect("could not parse oid").1
 }
 
-#[proc_macro_hack]
-pub fn oid(item: TokenStream) -> TokenStream {
+fn encode_components(components: &[num_bigint::BigUint], relative: bool) -> Vec<u8> {
 	use num_traits::cast::ToPrimitive;
 
-	let arg = item.to_string();
-	let (raw, rel, int_strings) = parse_arg(&arg);
-	let ints: Vec<num_bigint::BigUint> = int_strings.into_iter()
-		.map(|s| s.parse().unwrap())
-		.collect();
-	
 	let mut enc = Vec::new();
-	let mut dec = ints.as_slice();
-	if !rel {
+	let mut dec = components;
+	if !relative {
 		if dec.len() < 2 {
+			if dec.len() == 1 && dec[0] == 0u8.into() {
+				return vec![0];
+			}
 			panic!("Need at least two components for non-relative oid");
 		}
 		if dec[0] >= 7u8.into() || dec[1] >= 40u8.into() {
@@ -106,6 +102,17 @@ pub fn oid(item: TokenStream) -> TokenStream {
 		}
 		enc[last] ^= 1 << 7;
 	}
+	enc
+}
+
+#[proc_macro_hack]
+pub fn oid(item: TokenStream) -> TokenStream {
+	let arg = item.to_string();
+	let (raw, relative, int_strings) = parse_arg(&arg);
+	let ints: Vec<num_bigint::BigUint> = int_strings.into_iter()
+		.map(|s| s.parse().unwrap())
+		.collect();
+	let enc = encode_components(&ints, relative);
 
 	let mut s = String::with_capacity(2 + 6 * enc.len());
 	s.push('[');
@@ -116,7 +123,7 @@ pub fn oid(item: TokenStream) -> TokenStream {
 
 	let code = if raw {
 		format!("{}", s)
-	} else if rel {
+	} else if relative {
 		format!("der_parser::oid::Oid::new_relative(std::borrow::Cow::Borrowed({}.as_ref()))", s)
 	} else {
 		format!("der_parser::oid::Oid::new(std::borrow::Cow::Borrowed({}.as_ref()))", s)
