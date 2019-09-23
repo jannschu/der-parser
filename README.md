@@ -96,7 +96,7 @@ or use the `bigint` feature of this crate and use
 
 ## Changes
 
-### 4
+### 4.0.0
 
 - Change the api around `Oid` to achieve zero-copy. The following changed:
     - The `Oid` struct now has a lifetime and uses `Cow` internally.
@@ -107,6 +107,10 @@ or use the `bigint` feature of this crate and use
       only available if `bignum` is activated.
     - `from_relative` was added to `Oid`. `from` returns a `Result` now.
     - The procedural macro `oid!` was added.
+- The string types `IA5String`, `NumericString`, `PrintableString` and `UTF8String`
+  do now only parse if the characters are valid.
+- `as_str()` was added to `BerObjectContent` to obtain a `&str` for the types above.
+  `as_slice()` works as before.
 
 ### 3.0.2
 
